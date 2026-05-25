@@ -1,5 +1,8 @@
 # AgentEval-Framework
 
+[![Tests](https://github.com/Subhadip0904/AgentEval-Framework/actions/workflows/test.yml/badge.svg)](https://github.com/Subhadip0904/AgentEval-Framework/actions/workflows/test.yml)
+[![Lint](https://github.com/Subhadip0904/AgentEval-Framework/actions/workflows/lint.yml/badge.svg)](https://github.com/Subhadip0904/AgentEval-Framework/actions/workflows/lint.yml)
+
 > A composable, modular AI engineering assistant built with LangChain, LangGraph, and FastAPI — designed to help SSD ASIC architecture teams query technical specifications, classify firmware logs, and automate repetitive engineering workflows through natural language.
 
 ---
@@ -23,22 +26,28 @@ Built as part of the **Micron International Academy** program at the University 
 ┌─────────────────────────▼───────────────────────────┐
 │              LangGraph Orchestration Agent           │
 │   StateGraph → agent_node → tools_condition → tools  │
-└──────┬──────────────────────────────────┬───────────┘
-       │                                  │
-┌──────▼──────┐                  ┌────────▼────────┐
-│ spec_search │                  │ log_classifier  │
-│   @tool     │                  │    @tool        │
-│             │                  │                 │
-│ Keyword RAG │                  │ Few-shot LLM    │
-│ over NVMe,  │                  │ classifies logs │
-│ PCIe, UFS   │                  │ INFO/WARN/CRIT  │
-│ spec docs   │                  │                 │
-└─────────────┘                  └─────────────────┘
+└────┬─────────────────────────────────┬─────────────┬┘
+     │                                 │             │
+┌────▼──────┐          ┌──────────┐    │    ┌────────▼────────┐
+│spec_search│          │FAISS Idx │    │    │code_explainer   │
+│   @tool   │─────────→│ Semantic │    │    │    @tool        │
+│           │          │  Search  │    │    │                 │
+│Vector RAG │          │          │    │    │Firmware code    │
+│over Specs │          └──────────┘    │    │explanation      │
+└───────────┘                          │    └─────────────────┘
+                          ┌────────────▼────────┐
+                          │log_classifier       │
+                          │    @tool            │
+                          │                     │
+                          │ Few-shot LLM        │
+                          │ classifies logs     │
+                          │ INFO/WARN/CRIT      │
+                          └─────────────────────┘
 ```
 
 **Three layers:**
-- **Tool layer** — standalone Python functions decorated with `@tool`, each with a precise docstring the agent reads to decide when to invoke it
-- **Orchestration layer** — LangGraph `StateGraph` with conditional routing between agent reasoning and tool execution
+- **Tool layer** — three independent tools: `spec_search` (semantic RAG), `log_classifier` (few-shot), `code_explainer` (context-aware)
+- **Orchestration layer** — LangGraph `StateGraph` with conditional routing and tool execution
 - **Integration layer** — FastAPI REST endpoint exposing the full pipeline via `POST /ask`
 
 ---
@@ -48,31 +57,43 @@ Built as part of the **Micron International Academy** program at the University 
 ```
 AgentEval-Framework/
 ├── tools/
-│   ├── spec_search.py        # RAG tool: searches SSD spec documents
-│   ├── log_classifier.py     # Few-shot tool: classifies firmware logs
-│   ├── code_explainer.py     # (planned) explains C/Verilog snippets
+│   ├── spec_search.py        # RAG tool: semantic search over spec PDFs
+│   ├── log_classifier.py     # Few-shot tool: classifies firmware logs (INFO/WARN/CRITICAL)
+│   ├── code_explainer.py     # Explains C/Verilog code in hardware context
+│   ├── pdf_loader.py         # Loads and chunks PDF specifications
+│   ├── retriever.py          # FAISS vector search over documents
 │   └── __init__.py
 ├── agent/
-│   ├── graph.py              # LangGraph StateGraph definition
-│   ├── state.py              # AgentState TypedDict
+│   ├── graph.py              # LangGraph StateGraph orchestration
+│   ├── state.py              # AgentState TypedDict definition
 │   └── __init__.py
 ├── api/
 │   ├── main.py               # FastAPI app with /ask endpoint
 │   ├── schemas.py            # Pydantic request/response models
 │   └── __init__.py
-├── notebooks/
-│   ├── 01_basic_llm_call.ipynb      # LLM API fundamentals
-│   ├── 02_rag_pipeline.ipynb        # RAG pipeline walkthrough
-│   └── 03_langgraph_agent.ipynb     # LangGraph agent demo
+├── evals/
+│   ├── evaluator.py          # Framework for evaluating agent accuracy
+│   └── __init__.py
 ├── tests/
-│   ├── test_spec_search.py          # Unit tests for spec search tool
+│   ├── test_spec_search.py          # Unit tests for spec search
 │   ├── test_log_classifier.py       # Unit tests for log classifier
-│   └── golden_qa.json               # Known Q&A pairs for eval
+│   ├── test_api.py                  # Integration tests for API
+│   └── golden_qa.json               # Known Q&A pairs for evaluation
+├── .github/
+│   └── workflows/
+│       ├── test.yml          # GitHub Actions: run pytest
+│       └── lint.yml          # GitHub Actions: black, isort, flake8
 ├── data/
-│   └── pdfs/                        # Spec PDFs (not committed)
-├── .env.example                     # Environment variable template
-├── config.yaml                      # Model, retrieval, API config
-├── requirements.txt                 # Pinned dependencies
+│   ├── pdfs/                        # Spec PDFs (add your own)
+│   ├── golden_qa.json               # Golden Q&A pairs
+│   └── faiss_index                  # Built FAISS index
+├── notebooks/
+│   ├── 01_basic_llm_call.ipynb
+│   ├── 02_rag_pipeline.ipynb
+│   └── 03_langgraph_agent.ipynb
+├── .env.example                     # Environment template
+├── config.yaml                      # Configuration file
+├── requirements.txt                 # Python dependencies
 └── README.md
 ```
 
@@ -90,12 +111,8 @@ AgentEval-Framework/
 ```bash
 git clone https://github.com/Subhadip0904/AgentEval-Framework.git
 cd AgentEval-Framework
-python -m venv .venv311
-# Windows:
-.venv311\Scripts\activate
-# Mac/Linux:
-source .venv311/bin/activate
-
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
@@ -123,19 +140,34 @@ python tools/spec_search.py
 
 # Test log classifier
 python tools/log_classifier.py
+
+# Test code explainer
+python tools/code_explainer.py
 ```
 
-### 5. Run the full agent
+### 5. Run the API server
 
 ```bash
-python tools/run_agent.py
+uvicorn api.main:app --reload
+# Visit http://localhost:8000/docs for interactive API docs
 ```
 
-
-## Running Tests
+### 6. Test the API
 
 ```bash
+curl -X POST "http://localhost:8000/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "How does NVMe queue depth work?"}'
+```
+
+### 7. Run tests and evaluation
+
+```bash
+# Run unit tests
 pytest tests/ -v
+
+# Run evaluation on golden Q&A pairs
+python -m evals.evaluator
 ```
 
 ---
@@ -145,13 +177,15 @@ pytest tests/ -v
 
 | Component | Technology |
 |---|---|
-| LLM provider | Ollama (local) / Groq (cloud) |
+| LLM provider | Ollama (local) or Groq/OpenAI (cloud) |
 | Agent orchestration | LangGraph |
-| Tool framework | LangChain `@tool` |
-| Vector search | FAISS (planned) |
+| Tool framework | LangChain `@tool` decorator |
+| Vector search | FAISS (semantic similarity) |
 | API layer | FastAPI + Pydantic |
-| Embeddings | sentence-transformers (planned) |
+| Embeddings | sentence-transformers |
+| PDF processing | pdfplumber + LangChain splitter |
 | Testing | pytest |
+| CI/CD | GitHub Actions |
 
 ---
 

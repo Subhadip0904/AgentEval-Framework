@@ -1,0 +1,22 @@
+[
+  {
+    "question": "How does NVMe queue depth work?",
+    "answer": "NVMe supports up to 65535 I/O queues with 65535 commands per queue, enabling massive flash parallelism through Command Submission Queues and Completion Queues."
+  },
+  {
+    "question": "What is FTL?",
+    "answer": "The Flash Translation Layer (FTL) maps logical block addresses to physical NAND, handles wear levelling, garbage collection, and bad block management to ensure data reliability."
+  },
+  {
+    "question": "What is the bandwidth of PCIe 4.0?",
+    "answer": "PCIe 4.0 provides approximately 2 GB/s per lane. NVMe SSDs typically use x4 configuration for 8 GB/s total bandwidth."
+  },
+  {
+    "question": "How fast is UFS 3.1?",
+    "answer": "UFS 3.1 supports full-duplex communication at 23.2 Gbps per lane over M-PHY physical layer, providing superior performance compared to eMMC."
+  },
+  {
+    "question": "What does ECC do in NAND flash?",
+    "answer": "ECC (Error-Correcting Code) detects and corrects bit errors in NAND flash. Uncorrectable ECC errors indicate block failure and require remapping to spare blocks."
+  }
+]
