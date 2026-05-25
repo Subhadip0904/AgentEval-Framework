@@ -4,6 +4,12 @@ from typing import Optional
 
 app = FastAPI(title="Micron AI Engineering Assistant", version="0.1.0")
 
+from agent.graph import graph
+from langchain_core.messages import HumanMessage
+
+result = graph.invoke({"messages": [HumanMessage(req.question)]})
+answer = result["messages"][-1].content
+
 class AskRequest(BaseModel):
     question: str
     context: Optional[str] = None   # optional additional context from the caller
