@@ -1,0 +1,53 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Logs
+*.log
+logs/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Model files
+*.gguf
+*.bin
+models/
+
+# Evaluation generated outputs
+data/logs/
+data/evaluation_results/
+
+# Streamlit cache
+.streamlit/
+
+# Temporary files
+temp/
+tmp/
+
+# Python build files
+build/
+dist/
+*.egg-info/
+
+# Environment variables
+.env
