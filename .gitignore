@@ -5,9 +5,11 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.pyc
 
 # Virtual Environment
 .venv/
+.venv311/
 venv/
 env/
 
