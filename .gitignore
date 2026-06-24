@@ -53,3 +53,8 @@ dist/
 
 # Environment variables
 .env
+# FAISS index (rebuilt automatically on startup)
+data/faiss_index/
+
+# pytest cache
+.pytest_cache/

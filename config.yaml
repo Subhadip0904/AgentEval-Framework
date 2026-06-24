@@ -1,7 +1,9 @@
 llm:
-  model: "gpt-4o-mini"
+  model: "gemma3:4b-it-q4_K_M"
   temperature: 0.1
   max_tokens: 1000
+  api_key: "ollama"
+  base_url: "http://localhost:11434/v1"
 
 retrieval:
   embedding_model: "all-MiniLM-L6-v2"
